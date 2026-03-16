@@ -51,11 +51,14 @@ export OCI_REGION="eu-frankfurt-1"
 ./scripts/run-container.sh ocilab-hadoop:latest ocilab-hadoop
 ```
 
-UIs:
-- HDFS: http://localhost:9870
-- YARN: http://localhost:18088
-- NodeManager: http://localhost:8042
-- JobHistory: http://localhost:19888
+Container endpoints:
+- HDFS NameNode UI: http://localhost:9870
+- HDFS DataNode UI: http://localhost:9864
+- YARN ResourceManager UI: http://localhost:18088/cluster
+- YARN NodeManager UI: http://localhost:8042/node
+- MapReduce JobHistory UI: http://localhost:19888/jobhistory
+- HiveServer2 (Thrift/JDBC): localhost:10000
+- HiveServer2 Web UI: http://localhost:10002
 
 ## 5. Run classic banking app (HDFS)
 
