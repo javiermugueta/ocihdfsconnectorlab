@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<configuration>
+  <property>
+    <name>fs.defaultFS</name>
+    <value>${FS_DEFAULTFS}</value>
+  </property>
+
+  <property>
+    <name>hadoop.tmp.dir</name>
+    <value>/tmp/hadoop-${user.name}</value>
+  </property>
+
+  <property>
+    <name>fs.oci.client.auth.tenantId</name>
+    <value>${OCI_TENANCY_OCID}</value>
+  </property>
+  <property>
+    <name>fs.oci.client.auth.userId</name>
+    <value>${OCI_USER_OCID}</value>
+  </property>
+  <property>
+    <name>fs.oci.client.auth.fingerprint</name>
+    <value>${OCI_FINGERPRINT}</value>
+  </property>
+  <property>
+    <name>fs.oci.client.auth.pemfilepath</name>
+    <value>${OCI_PRIVATE_KEY_PATH}</value>
+  </property>
+  <property>
+    <name>fs.oci.client.regionCodeOrId</name>
+    <value>${OCI_REGION}</value>
+  </property>
+  <property>
+    <name>fs.oci.impl</name>
+    <value>com.oracle.bmc.hdfs.BmcFilesystem</value>
+  </property>
+</configuration>

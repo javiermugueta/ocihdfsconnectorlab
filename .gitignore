@@ -1,0 +1,7 @@
+# Local OCI secrets
+.oci.env
+.oci/*
+!.oci/.gitkeep
+
+# Build outputs
+banking-app/target/
