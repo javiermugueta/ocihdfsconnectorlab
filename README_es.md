@@ -119,6 +119,26 @@ OCI Object Storage (solo cambia `LOCATION`):
 ./scripts/run-hive-oci.sh ocilab-hadoop oci://<bucket>@<namespace>/apps/banking/input
 ```
 
+## 10. Ejemplo de app Hive (scoring de riesgo)
+
+HDFS clasico:
+
+```bash
+./scripts/run-hive-app-classic.sh ocilab-hadoop
+```
+
+OCI Object Storage:
+
+```bash
+./scripts/run-hive-app-oci.sh ocilab-hadoop oci://<bucket>@<namespace>/apps/banking/input
+```
+
+Nota: la variante OCI usa Hive para metadata/DDL y Spark SQL (modo local) para el calculo de agregacion de riesgo.
+
+Salidas:
+- `banking.account_risk_hdfs`
+- `banking.account_risk_oci`
+
 ## Estructura
 
 - `Containerfile`: imagen con stack Hadoop/Hive/Spark + connector OCI

@@ -56,6 +56,13 @@ RUN cat > /opt/build-oci/pom.xml <<POM
       <groupId>com.oracle.oci.sdk</groupId>
       <artifactId>oci-hdfs-connector</artifactId>
       <version>${OCI_HDFS_CONNECTOR_VERSION}</version>
+      <exclusions>
+        <!-- Keep runtime aligned with bundled Hadoop; avoid pulling a second Hadoop stack -->
+        <exclusion>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 </project>

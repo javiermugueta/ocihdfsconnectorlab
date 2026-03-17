@@ -142,8 +142,23 @@ init_hive() {
     schematool -dbType derby -initSchema || true
   fi
 
+  # Keep Hive services on the OCI SDK Jersey stack (2.35) and avoid Hive's older Jersey/JAX-RS jars.
+  local hs2_oci_backup="/opt/hive/lib/oci-hs2-conflict-backup"
+  mkdir -p "${hs2_oci_backup}"
+  for p in \
+    /opt/hive/lib/jersey-*-2.25*.jar \
+    /opt/hive/lib/javax.ws.rs-api-2.0.1.jar; do
+    for f in ${p}; do
+      [ -f "${f}" ] || continue
+      mv -f "${f}" "${hs2_oci_backup}/"
+    done
+  done
+
+  local oci_java_opts="-Djavax.ws.rs.ext.RuntimeDelegate=org.glassfish.jersey.internal.RuntimeDelegateImpl"
+
   echo "[init] Starting Hive metastore"
-  nohup hive --service metastore >/var/log/hadoop/hive-metastore.log 2>&1 &
+  HADOOP_CLIENT_OPTS="${HADOOP_CLIENT_OPTS:-} ${oci_java_opts}" \
+    nohup hive --service metastore >/var/log/hadoop/hive-metastore.log 2>&1 &
 
   echo "[init] Waiting for Hive metastore on 9083"
   for _ in $(seq 1 30); do
@@ -154,7 +169,8 @@ init_hive() {
   done
 
   echo "[init] Starting HiveServer2"
-  nohup hiveserver2 >/var/log/hadoop/hiveserver2.log 2>&1 &
+  HADOOP_CLIENT_OPTS="${HADOOP_CLIENT_OPTS:-} ${oci_java_opts}" \
+    nohup hiveserver2 >/var/log/hadoop/hiveserver2.log 2>&1 &
 }
 
 main() {
