@@ -14,24 +14,32 @@ podman exec "${CONTAINER_NAME}" bash -lc "
 
   TMP_JAXRS_DIR=/tmp/oci-jaxrs-backup-hive-app
   mkdir -p \${TMP_JAXRS_DIR}
+  OLD_GUAVA='/opt/spark/jars/guava-14.0.1.jar'
+  BAK_GUAVA='/tmp/guava-14.0.1.jar.bak-hive-app'
+
   restore_jaxrs() {
-    for d in \\
-      /opt/hadoop/share/hadoop/common/lib \\
-      /opt/hadoop/share/hadoop/hdfs/lib; do
-      b=\$(basename \"\$d\")
-      for f in \"\${TMP_JAXRS_DIR}/\${b}.\"*; do
+    for d in /opt/hadoop/share/hadoop/common/lib; do
+      k=\$(echo \"\$d\" | sed 's#/#_#g')
+      for f in \"\${TMP_JAXRS_DIR}/\${k}.\"*; do
         [ -f \"\$f\" ] || continue
         mv -f \"\$f\" \"\$d/\$(basename \"\$f\" | cut -d. -f2-)\"
       done
     done
   }
-  trap restore_jaxrs EXIT
+  restore_guava() {
+    if [ -f \"\${BAK_GUAVA}\" ]; then
+      mv -f \"\${BAK_GUAVA}\" \"\${OLD_GUAVA}\"
+    fi
+  }
+  cleanup() {
+    restore_guava
+    restore_jaxrs
+  }
+  trap cleanup EXIT
 
   # Avoid classpath conflicts between Hadoop Jersey1/JAX-RS1 and OCI SDK Jersey2 stack.
-  for d in \\
-    /opt/hadoop/share/hadoop/common/lib \\
-    /opt/hadoop/share/hadoop/hdfs/lib; do
-    b=\$(basename \"\$d\")
+  for d in /opt/hadoop/share/hadoop/common/lib; do
+    k=\$(echo \"\$d\" | sed 's#/#_#g')
     for p in \\
       jsr311-api-1.1.1.jar \\
       jersey-core-1*.jar \\
@@ -42,7 +50,7 @@ podman exec "${CONTAINER_NAME}" bash -lc "
       jersey-guice-1*.jar; do
       for f in \"\$d\"/\$p; do
         [ -f \"\$f\" ] || continue
-        mv -f \"\$f\" \"\${TMP_JAXRS_DIR}/\${b}.\$(basename \"\$f\")\"
+        mv -f \"\$f\" \"\${TMP_JAXRS_DIR}/\${k}.\$(basename \"\$f\")\"
       done
     done
   done
@@ -78,14 +86,6 @@ HIVESQL
   OCI_INPUT_URI='${OCI_INPUT_URI}' envsubst < /tmp/banking_risk_oci_ddl.sql.tpl > /tmp/banking_risk_oci_ddl.sql
   beeline -u jdbc:hive2://localhost:10000/default -n root -f /tmp/banking_risk_oci_ddl.sql
 
-  OLD_GUAVA='/opt/spark/jars/guava-14.0.1.jar'
-  BAK_GUAVA='/tmp/guava-14.0.1.jar.bak-hive-app'
-  restore_guava() {
-    if [ -f \"\${BAK_GUAVA}\" ]; then
-      mv -f \"\${BAK_GUAVA}\" \"\${OLD_GUAVA}\"
-    fi
-  }
-  trap restore_guava EXIT
   if [ -f \"\${OLD_GUAVA}\" ]; then
     mv -f \"\${OLD_GUAVA}\" \"\${BAK_GUAVA}\"
   fi
