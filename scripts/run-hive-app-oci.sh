@@ -3,9 +3,10 @@ set -euo pipefail
 
 CONTAINER_NAME="${1:-ocilab-hadoop}"
 OCI_INPUT_URI="${2:-}"
+OCI_TABLE_URI="${OCI_INPUT_URI%/}/transactions_csv_app"
 
 if [ -z "${OCI_INPUT_URI}" ]; then
-  echo "Uso: $0 <container> oci://<bucket>@<namespace>/apps/banking/input"
+  echo "Uso: $0 <container> oci://<bucket>@<namespace>/apps/banking[/input]"
   exit 1
 fi
 
@@ -55,13 +56,16 @@ podman exec "${CONTAINER_NAME}" bash -lc "
     done
   done
 
-  hadoop fs -mkdir -p ${OCI_INPUT_URI}
-  hadoop fs -put -f /workspace/data/transactions_sample.csv ${OCI_INPUT_URI}/transactions.csv
+  hadoop fs -rm -r -f ${OCI_TABLE_URI} >/dev/null 2>&1 || true
+  hadoop fs -mkdir -p ${OCI_TABLE_URI}
+  hadoop fs -put -f /workspace/data/transactions_sample.csv ${OCI_TABLE_URI}/transactions.csv
 
   cat > /tmp/banking_risk_oci_ddl.sql.tpl <<'HIVESQL'
 CREATE DATABASE IF NOT EXISTS banking;
 
-CREATE EXTERNAL TABLE IF NOT EXISTS banking.transactions_csv_app_oci (
+DROP TABLE IF EXISTS banking.transactions_csv_app_oci;
+
+CREATE EXTERNAL TABLE banking.transactions_csv_app_oci (
   txn_id STRING,
   txn_date STRING,
   account_id STRING,
@@ -77,13 +81,13 @@ WITH SERDEPROPERTIES (
   'quoteChar'     = '\"'
 )
 STORED AS TEXTFILE
-LOCATION '\${OCI_INPUT_URI}'
+LOCATION '\${OCI_TABLE_URI}'
 TBLPROPERTIES (\"skip.header.line.count\"=\"1\");
 
 DROP TABLE IF EXISTS banking.account_risk_oci;
 HIVESQL
 
-  OCI_INPUT_URI='${OCI_INPUT_URI}' envsubst < /tmp/banking_risk_oci_ddl.sql.tpl > /tmp/banking_risk_oci_ddl.sql
+  OCI_TABLE_URI='${OCI_TABLE_URI}' envsubst < /tmp/banking_risk_oci_ddl.sql.tpl > /tmp/banking_risk_oci_ddl.sql
   beeline -u jdbc:hive2://localhost:10000/default -n root -f /tmp/banking_risk_oci_ddl.sql
 
   if [ -f \"\${OLD_GUAVA}\" ]; then
